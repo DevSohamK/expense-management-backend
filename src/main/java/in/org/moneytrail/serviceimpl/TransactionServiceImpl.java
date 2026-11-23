@@ -3,6 +3,7 @@ package in.org.moneytrail.serviceimpl;
 import in.org.moneytrail.dto.TransactionRequest;
 import in.org.moneytrail.dto.TransactionResponse;
 import in.org.moneytrail.entity.Transaction;
+import in.org.moneytrail.exception.TransactionNotFoundException;
 import in.org.moneytrail.mapper.TransactionMapper;
 import in.org.moneytrail.service.TransactionService;
 import lombok.AllArgsConstructor;
@@ -56,7 +57,8 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse findById(Long transactionId) {
         return Optional.ofNullable(inMemoryTransactionRepository.get(transactionId))
                 .map(mapper::toResponse)
-                .orElseThrow(() -> new RuntimeException("Transaction with id :: " + transactionId + " is not found"));
+//                .orElseThrow(() -> new RuntimeException("Transaction with id :: " + transactionId + " is not found"));
+        .orElseThrow(() -> new TransactionNotFoundException(transactionId));
     }
 
     @Override
@@ -69,7 +71,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public TransactionResponse updateTransactionById(Long transactionId, TransactionRequest updatedTransaction) {
-        Optional.ofNullable(inMemoryTransactionRepository.get(transactionId)).orElseThrow(() -> new RuntimeException("Transaction with id :: " + transactionId + " is not found"));
+        Optional.ofNullable(inMemoryTransactionRepository.get(transactionId)).orElseThrow(() -> new TransactionNotFoundException(transactionId));
         Transaction existingTransaction = inMemoryTransactionRepository.get(transactionId);
         mapper.updateEntity(existingTransaction, updatedTransaction);
         return mapper.toResponse(existingTransaction);
@@ -77,7 +79,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public void deleteTransactionById(Long transactionId) {
-        Optional.ofNullable(inMemoryTransactionRepository.get(transactionId)).orElseThrow(() -> new RuntimeException("Transaction with id :: " + transactionId + " is not found"));
+        Optional.ofNullable(inMemoryTransactionRepository.get(transactionId)).orElseThrow(() -> new TransactionNotFoundException(transactionId));
         inMemoryTransactionRepository.remove(transactionId);
     }
 }
