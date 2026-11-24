@@ -8,9 +8,13 @@ import in.org.moneytrail.mapper.TransactionMapper;
 import in.org.moneytrail.mapper.TransactionMapperMapStruct;
 import in.org.moneytrail.service.TransactionService;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,7 +69,7 @@ public class TransactionServiceImpl implements TransactionService {
         return Optional.ofNullable(inMemoryTransactionRepository.get(transactionId))
                 .map(mapperMapStruct::toResponse)
 //                .orElseThrow(() -> new RuntimeException("Transaction with id :: " + transactionId + " is not found"));
-        .orElseThrow(() -> new TransactionNotFoundException(transactionId));
+                .orElseThrow(() -> new TransactionNotFoundException(transactionId));
     }
 
     @Override
@@ -88,5 +92,30 @@ public class TransactionServiceImpl implements TransactionService {
     public void deleteTransactionById(Long transactionId) {
         Optional.ofNullable(inMemoryTransactionRepository.get(transactionId)).orElseThrow(() -> new TransactionNotFoundException(transactionId));
         inMemoryTransactionRepository.remove(transactionId);
+    }
+
+    @Override
+    public Page<TransactionResponse> findAllTransactions(Pageable pageable) {
+        List<Transaction> transactions = inMemoryTransactionRepository.values()
+                .stream()
+                .sorted(Comparator.comparing(
+                        Transaction::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ))
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        if (start >= transactions.size()) {
+            return new PageImpl<>(List.of(), pageable, transactions.size());
+        }
+        int end = Math.min(start + pageable.getPageSize(), transactions.size());
+
+        List<TransactionResponse> response = transactions
+                .subList(start, end)
+                .stream()
+                .map(mapperMapStruct::toResponse)
+                .toList();
+
+        return new PageImpl<>(response, pageable, transactions.size());
     }
 }
