@@ -5,6 +5,7 @@ import in.org.moneytrail.dto.TransactionResponse;
 import in.org.moneytrail.entity.Transaction;
 import in.org.moneytrail.exception.TransactionNotFoundException;
 import in.org.moneytrail.mapper.TransactionMapper;
+import in.org.moneytrail.mapper.TransactionMapperMapStruct;
 import in.org.moneytrail.service.TransactionService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final AtomicLong idGenerator = new AtomicLong(0);
     private final Map<Long, Transaction> inMemoryTransactionRepository = new ConcurrentHashMap<>();
     private final TransactionMapper mapper;
+    private final TransactionMapperMapStruct mapperMapStruct;
 
     @Override
     public TransactionResponse saveTransaction(TransactionRequest transaction) {
@@ -36,7 +38,10 @@ public class TransactionServiceImpl implements TransactionService {
 //                .description(transaction.description())
 //                .build();
 
-        Transaction newTransaction = mapper.toEntity(transaction);
+//        Transaction newTransaction = mapper.toEntity(transaction);
+
+        Transaction newTransaction = mapperMapStruct.toEntity(transaction);
+
         newTransaction.setId(idGenerator.incrementAndGet());
 
         inMemoryTransactionRepository.put(newTransaction.getId(), newTransaction);
@@ -50,13 +55,15 @@ public class TransactionServiceImpl implements TransactionService {
 //                newTransaction.getDescription(),
 //                newTransaction.getCreatedAt());
 
-        return mapper.toResponse(newTransaction);
+//        return mapper.toResponse(newTransaction);
+
+        return mapperMapStruct.toResponse(newTransaction);
     }
 
     @Override
     public TransactionResponse findById(Long transactionId) {
         return Optional.ofNullable(inMemoryTransactionRepository.get(transactionId))
-                .map(mapper::toResponse)
+                .map(mapperMapStruct::toResponse)
 //                .orElseThrow(() -> new RuntimeException("Transaction with id :: " + transactionId + " is not found"));
         .orElseThrow(() -> new TransactionNotFoundException(transactionId));
     }
@@ -65,7 +72,7 @@ public class TransactionServiceImpl implements TransactionService {
     public List<TransactionResponse> getAllTransactions() {
         return inMemoryTransactionRepository.values()
                 .stream()
-                .map(mapper::toResponse)
+                .map(mapperMapStruct::toResponse)
                 .toList();
     }
 
